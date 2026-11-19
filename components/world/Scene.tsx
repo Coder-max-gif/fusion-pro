@@ -93,7 +93,7 @@ function Stars({ count }: { count: number }) {
         void main() {
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
           gl_Position = projectionMatrix * mv;
-          vTw = 0.8 + 0.2 * sin(uTime * 0.6 + aPhase);
+          vTw = 0.68 + 0.32 * sin(uTime * (0.7 + fract(aPhase) * 0.8) + aPhase);
           gl_PointSize = max(1.0, aSize * uPixel * (260.0 / -mv.z));
           vColor = aColor;
         }`,
@@ -102,7 +102,7 @@ function Stars({ count }: { count: number }) {
         void main() {
           float d = length(gl_PointCoord - 0.5);
           float a = smoothstep(0.5, 0.0, d);
-          gl_FragColor = vec4(vColor * 1.2, a * vTw);
+          gl_FragColor = vec4(vColor * 1.4, a * vTw);
         }`,
     });
     return { geo, mat };
@@ -234,6 +234,8 @@ function FusionCore() {
   const shell = useRef<THREE.Mesh>(null);
   const glow = useRef<THREE.Sprite>(null);
   const sats = useRef<THREE.Group>(null);
+  const wave = useRef<THREE.Sprite>(null);
+  const waveMat = useRef<THREE.SpriteMaterial>(null);
   const fresnel = useMemo(
     () =>
       new THREE.ShaderMaterial({
@@ -271,7 +273,7 @@ function FusionCore() {
       })),
     [],
   );
-  const white = useMemo(() => new THREE.MeshBasicMaterial({ color: hdr("#f2f4ff", 3.2), toneMapped: false }), []);
+  const white = useMemo(() => new THREE.MeshBasicMaterial({ color: hdr("#f2f4ff", 4.2), toneMapped: false }), []);
 
   useFrame(() => {
     const t = rig.time;
@@ -280,6 +282,13 @@ function FusionCore() {
     glow.current?.scale.setScalar(6.0 + Math.sin(t * 0.9) * 0.2);
     rings.forEach((x) => (x.mat.opacity = 0.12 + rig.rings * 0.6));
     if (sats.current) sats.current.children.forEach((c, i) => (c.rotation.y = t * rings[i].sp));
+    // Energy pulse: grows out of the core and fades — slow (one every 4.5 s), soft, never a hard flash
+    if (wave.current && waveMat.current) {
+      const ph = (t % 4.5) / 4.5;
+      const e = 1 - Math.pow(1 - ph, 3);
+      wave.current.scale.setScalar(1.5 + e * 11);
+      waveMat.current.opacity = rig.reduce ? 0 : 0.32 * Math.sin(Math.min(1, ph * 1.15) * Math.PI) * (1 - ph);
+    }
   });
 
   return (
@@ -291,8 +300,11 @@ function FusionCore() {
       <mesh ref={shell} material={fresnel}>
         <sphereGeometry args={[0.95, 48, 32]} />
       </mesh>
+      <sprite ref={wave} scale={[1.5, 1.5, 1.5]}>
+        <spriteMaterial ref={waveMat} map={glowTexture()} color="#9fb4ff" transparent opacity={0} depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </sprite>
       <sprite ref={glow} scale={[6.5, 6.5, 6.5]}>
-        <spriteMaterial map={glowTexture()} color="#7d8fff" transparent opacity={0.38} depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
+        <spriteMaterial map={glowTexture()} color="#7d8fff" transparent opacity={0.46} depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
       </sprite>
       <group rotation={[0.28, 0, 0.08]} ref={sats}>
         {rings.map((x) => (
@@ -574,9 +586,9 @@ export default function Scene({ onReady, onLost }: { onReady: () => void; onLost
   }, []);
   const mobile = tier === "phone";
   const q = {
-    phone: { dpr: [1, 1.5] as [number, number], stars: 1500, warp: 240, rocks: 100, msaa: 0, bloom: 0.6 },
-    tablet: { dpr: [1, 1.5] as [number, number], stars: 2400, warp: 420, rocks: 170, msaa: 0, bloom: 0.65 },
-    desktop: { dpr: [1, 1.5] as [number, number], stars: 3600, warp: 650, rocks: 240, msaa: 0, bloom: 0.7 },
+    phone: { dpr: [1, 1.5] as [number, number], stars: 1500, warp: 240, rocks: 100, msaa: 0, bloom: 0.75 },
+    tablet: { dpr: [1, 1.5] as [number, number], stars: 2400, warp: 420, rocks: 170, msaa: 0, bloom: 0.8 },
+    desktop: { dpr: [1, 1.5] as [number, number], stars: 3600, warp: 650, rocks: 240, msaa: 0, bloom: 0.9 },
   }[tier];
   rig.reduce = reduce;
 
@@ -617,7 +629,7 @@ export default function Scene({ onReady, onLost }: { onReady: () => void; onLost
       <AdaptiveQuality min={mobile ? 0.75 : 1} />
 
       <EffectComposer multisampling={q.msaa}>
-        <Bloom mipmapBlur intensity={q.bloom} luminanceThreshold={1.2} luminanceSmoothing={0.25} radius={0.6} />
+        <Bloom mipmapBlur intensity={q.bloom} luminanceThreshold={1.1} luminanceSmoothing={0.25} radius={0.65} />
         <Vignette offset={0.22} darkness={0.85} />
         <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
       </EffectComposer>

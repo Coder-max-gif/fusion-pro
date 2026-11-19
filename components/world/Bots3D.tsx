@@ -36,12 +36,12 @@ function useBotMaterials(shell: string, accent: string, flat = false) {
       shell: new THREE.MeshStandardMaterial({ color: shell, metalness: 0.7, roughness: 0.3, flatShading: flat }),
       dark: new THREE.MeshStandardMaterial({ color: "#05070f", metalness: 0.9, roughness: 0.12 }),
       joint: new THREE.MeshStandardMaterial({ color: "#1a2350", metalness: 0.6, roughness: 0.4 }),
-      glow: new THREE.MeshBasicMaterial({ color: hdr(accent, 2.6), toneMapped: false }),
+      glow: new THREE.MeshBasicMaterial({ color: hdr(accent, 3.2), toneMapped: false }),
       soft: new THREE.MeshBasicMaterial({ color: hdr(accent, 1.6), toneMapped: false }),
       flame: new THREE.MeshBasicMaterial({
-        color: hdr(accent, 1.8),
+        color: hdr(accent, 2.3),
         transparent: true,
-        opacity: 0.6,
+        opacity: 0.68,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         toneMapped: false,
@@ -75,7 +75,7 @@ function useIdle(
       g.scale.setScalar(s);
     }
     if (refs.light.current) refs.light.current.intensity = opts.light * (0.6 + f * 1.6);
-    if (refs.thrust.current) refs.thrust.current.scale.y = 0.9 + Math.sin(t * 3.2) * 0.04 + f * 0.15;
+    if (refs.thrust.current) refs.thrust.current.scale.y = 0.9 + Math.sin(t * 3.2) * 0.05 + Math.sin(t * 6.4 + opts.phase) * 0.04 + f * 0.18;
     if (refs.eyes.current) refs.eyes.current.scale.y = (t % 5.2) > 5.05 ? 0.1 : 1;
   });
 }
@@ -216,7 +216,7 @@ export function CoreBot() {
     if (r1.current) r1.current.rotation.set(Math.PI / 2 + Math.sin(t * 0.7) * 0.5, t * 1.1 * k, 0);
     if (r2.current) r2.current.rotation.set(t * 0.8 * k, Math.PI / 3, t * 0.4);
     if (orbit.current) orbit.current.rotation.y = t * 0.6 * k;
-    if (heart.current) heart.current.scale.setScalar(1.2 + Math.sin(t * 1.0) * 0.06 + f * 0.3);
+    if (heart.current) heart.current.scale.setScalar(1.25 + Math.sin(t * 1.6) * 0.1 + f * 0.4);
   });
 
   return (
@@ -321,7 +321,7 @@ export function NovaBot() {
       }),
     [],
   );
-  const gold = useMemo(() => new THREE.MeshBasicMaterial({ color: hdr("#ffcf6b", 2.8), toneMapped: false }), []);
+  const gold = useMemo(() => new THREE.MeshBasicMaterial({ color: hdr("#ffcf6b", 3.6), toneMapped: false }), []);
   const rock = useMemo(
     () => new THREE.MeshStandardMaterial({ color: "#5a4258", roughness: 0.85, metalness: 0.1, flatShading: true }),
     [],
@@ -343,7 +343,7 @@ export function NovaBot() {
     const f = rig.focus[2];
     if (star.current) star.current.rotation.set(t * 1.3, t * 2.1, 0);
     if (flare.current) {
-      const p = 3.0 + Math.sin(t * 1.1) * 0.15 + f * 0.8;
+      const p = 3.1 + Math.sin(t * 1.3) * 0.25 + Math.sin(t * 2.9) * 0.08 + f * 1.0;
       flare.current.scale.setScalar(p);
     }
     if (shards.current) {
@@ -355,7 +355,7 @@ export function NovaBot() {
   return (
     <group ref={g} position={BOT_POS.nova}>
       <pointLight ref={light} color="#ff8a3d" distance={7} decay={1.6} position={[0, 0.3, 1.6]} />
-      <Glow refCb={flare} color="#ff7a3d" scale={3.0} opacity={0.3} position={[0, 0.1, -0.4]} />
+      <Glow refCb={flare} color="#ff7a3d" scale={3.0} opacity={0.38} position={[0, 0.1, -0.4]} />
 
       {/* torso */}
       <mesh material={m.shell} scale={[1.12, 1, 0.72]}>
